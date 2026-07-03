@@ -10,6 +10,7 @@ import tqdm
 import tyro
 
 import openpi.models.model as _model
+import openpi.policies.ur5e_schema as _ur5e_schema
 import openpi.shared.normalize as normalize
 import openpi.training.config as _config
 import openpi.training.data_loader as _data_loader
@@ -109,8 +110,6 @@ def main(config_name: str, max_frames: int | None = None):
     norm_stats = {key: stats.get_statistics() for key, stats in stats.items()}
 
     if config_name.startswith("pi05_ur5e_avea"):
-        from openpi.policies import ur5e_schema as _ur5e_schema
-
         state_dim = norm_stats["state"].mean.shape[-1]
         actions_dim = norm_stats["actions"].mean.shape[-1]
         if state_dim != _ur5e_schema.EXPECTED_STATE_DIM:
