@@ -7,6 +7,7 @@ import jax.numpy as jnp
 
 import openpi.models.model as _model
 import openpi.policies.policy as _policy
+import openpi.policies.ur5e_schema as _ur5e_schema
 import openpi.shared.download as download
 from openpi.training import checkpoints as _checkpoints
 from openpi.training import config as _config
@@ -64,8 +65,6 @@ def create_trained_policy(
         norm_stats = _checkpoints.load_norm_stats(checkpoint_dir / "assets", data_config.asset_id)
 
     if train_config.name.startswith("pi05_ur5e_avea"):
-        from openpi.policies import ur5e_schema as _ur5e_schema
-
         state_dim = norm_stats["state"].mean.shape[-1]
         actions_dim = norm_stats["actions"].mean.shape[-1]
         if state_dim != _ur5e_schema.EXPECTED_STATE_DIM:
@@ -82,7 +81,7 @@ def create_trained_policy(
     # Determine the device to use for PyTorch models
     if is_pytorch and pytorch_device is None:
         try:
-            import torch
+            import torch  # noqa: PLC0415  # optional dep, imported lazily (openpi is jax-first)
 
             pytorch_device = "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:

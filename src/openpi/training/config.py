@@ -21,6 +21,7 @@ import openpi.policies.aloha_policy as aloha_policy
 import openpi.policies.droid_policy as droid_policy
 import openpi.policies.libero_policy as libero_policy
 import openpi.policies.ur5e_policy as ur5e_policy
+import openpi.policies.ur5e_schema as _ur5e_schema
 import openpi.shared.download as _download
 import openpi.shared.normalize as _normalize
 import openpi.training.droid_rlds_dataset as droid_rlds_dataset
@@ -464,9 +465,6 @@ class LeRobotDROIDDataConfig(DataConfigFactory):
 
 
 # BEGIN RELLING UR5E DATA CONFIG
-from openpi.policies import ur5e_schema as _ur5e_schema
-
-
 @dataclasses.dataclass(frozen=True)
 class LeRobotUR5DataConfig(DataConfigFactory):
     @override

@@ -12,6 +12,11 @@ Layout:
 """
 
 from dataclasses import dataclass
+import json
+import os
+import pathlib
+
+import numpy as np
 
 DATASET_SCHEMA_VERSION = "v0.2"
 
@@ -69,8 +74,6 @@ def assemble_state(joints, joints_velocity, gripper):
     Accepts numpy arrays or anything array-like. Returns a 1-d float32 numpy
     array. Handles scalar gripper by promoting to 1-d.
     """
-    import numpy as np
-
     joints = np.asarray(joints, dtype=np.float32).reshape(-1)
     joints_velocity = np.asarray(joints_velocity, dtype=np.float32).reshape(-1)
     gripper = np.asarray(gripper, dtype=np.float32).reshape(-1)
@@ -128,10 +131,6 @@ def assert_dataset_schema_version(repo_id: str, root: str | None = None) -> None
     If root is None, falls back to HF_LEROBOT_HOME env, then the default LeRobot
     cache dir. Missing meta file = treated as an old (pre-v0.2) dataset and rejected.
     """
-    import json
-    import os
-    import pathlib
-
     if root is None:
         root = os.environ.get("HF_LEROBOT_HOME") or os.path.expanduser("~/.cache/huggingface/lerobot")
     meta_path = pathlib.Path(root) / repo_id / "ur5e_dataset_meta.json"
