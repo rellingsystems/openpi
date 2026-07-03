@@ -9,6 +9,7 @@ import numpy as np
 
 from openpi import transforms
 from openpi.models import model as _model
+from training.lerobot_ur5e import openpi_schema as _ur5e_schema
 
 
 def _parse_image(image) -> np.ndarray:
@@ -25,22 +26,41 @@ class UR5Inputs(transforms.DataTransformFn):
     model_type: _model.ModelType = _model.ModelType.PI05
 
     def __call__(self, data: dict) -> dict:
-        gripper = np.asarray(data["gripper"])
-        if gripper.ndim == 0:
-            gripper = gripper[np.newaxis]
-        state = np.concatenate([data["joints"], gripper])
+        joints = np.asarray(data["joints"])
+        velocity_raw = data.get("joints_velocity")
+        velocity = (
+            np.asarray(velocity_raw) if velocity_raw is not None else np.zeros_like(joints)
+        )
+        state = _ur5e_schema.assemble_state(joints, velocity, data["gripper"])
 
-        base_image = _parse_image(data["base_rgb"])
-        wrist_image = _parse_image(data["wrist_rgb"])
+        base_image = _parse_image(data[_ur5e_schema.CAMERA_FIELDS[0]])
+        wrist_image = _parse_image(data[_ur5e_schema.CAMERA_FIELDS[1]])
+        overhead_raw = data.get(_ur5e_schema.CAMERA_FIELDS[2])
+        overhead_image = _parse_image(overhead_raw) if overhead_raw is not None else None
+        overhead_present = (
+            overhead_image is not None and bool(np.any(np.asarray(overhead_image)))
+        )
 
         match self.model_type:
             case _model.ModelType.PI0 | _model.ModelType.PI05:
                 names = ("base_0_rgb", "left_wrist_0_rgb", "right_wrist_0_rgb")
-                images = (base_image, np.zeros_like(base_image), wrist_image)
-                image_masks = (np.True_, np.False_, np.True_)
+                images = (
+                    base_image,
+                    wrist_image,
+                    overhead_image if overhead_present else np.zeros_like(base_image),
+                )
+                image_masks = (
+                    np.True_,
+                    np.True_,
+                    np.True_ if overhead_present else np.False_,
+                )
             case _model.ModelType.PI0_FAST:
                 names = ("base_0_rgb", "base_1_rgb", "wrist_0_rgb")
-                images = (base_image, np.zeros_like(base_image), wrist_image)
+                images = (
+                    base_image,
+                    overhead_image if overhead_present else np.zeros_like(base_image),
+                    wrist_image,
+                )
                 image_masks = (np.True_, np.True_, np.True_)
             case _:
                 raise ValueError(f"Unsupported model type: {self.model_type}")

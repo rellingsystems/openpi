@@ -63,6 +63,22 @@ def create_trained_policy(
             raise ValueError("Asset id is required to load norm stats.")
         norm_stats = _checkpoints.load_norm_stats(checkpoint_dir / "assets", data_config.asset_id)
 
+    if train_config.name.startswith("pi05_ur5e_avea"):
+        from training.lerobot_ur5e import openpi_schema as _ur5e_schema
+
+        state_dim = norm_stats["state"].mean.shape[-1]
+        actions_dim = norm_stats["actions"].mean.shape[-1]
+        if state_dim != _ur5e_schema.EXPECTED_STATE_DIM:
+            raise AssertionError(
+                f"checkpoint norm_stats state dim {state_dim} != expected "
+                f"{_ur5e_schema.EXPECTED_STATE_DIM}; recompute with current schema"
+            )
+        if actions_dim != _ur5e_schema.EXPECTED_ACTION_DIM:
+            raise AssertionError(
+                f"checkpoint norm_stats actions dim {actions_dim} != expected "
+                f"{_ur5e_schema.EXPECTED_ACTION_DIM}; recompute with current schema"
+            )
+
     # Determine the device to use for PyTorch models
     if is_pytorch and pytorch_device is None:
         try:

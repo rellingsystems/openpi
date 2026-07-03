@@ -108,6 +108,22 @@ def main(config_name: str, max_frames: int | None = None):
 
     norm_stats = {key: stats.get_statistics() for key, stats in stats.items()}
 
+    if config_name.startswith("pi05_ur5e_avea"):
+        from training.lerobot_ur5e import openpi_schema as _ur5e_schema
+
+        state_dim = norm_stats["state"].mean.shape[-1]
+        actions_dim = norm_stats["actions"].mean.shape[-1]
+        if state_dim != _ur5e_schema.EXPECTED_STATE_DIM:
+            raise AssertionError(
+                f"computed norm_stats state dim {state_dim} != expected "
+                f"{_ur5e_schema.EXPECTED_STATE_DIM} from openpi_schema.STATE_FIELDS"
+            )
+        if actions_dim != _ur5e_schema.EXPECTED_ACTION_DIM:
+            raise AssertionError(
+                f"computed norm_stats actions dim {actions_dim} != expected "
+                f"{_ur5e_schema.EXPECTED_ACTION_DIM} from openpi_schema.ACTION_FIELDS"
+            )
+
     output_path = config.assets_dirs / data_config.repo_id
     print(f"Writing stats to: {output_path}")
     normalize.save(output_path, norm_stats)

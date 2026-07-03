@@ -466,30 +466,24 @@ class LeRobotDROIDDataConfig(DataConfigFactory):
 
 
 
+
 # BEGIN RELLING UR5E DATA CONFIG
+from training.lerobot_ur5e import openpi_schema as _ur5e_schema
+
+
 @dataclasses.dataclass(frozen=True)
 class LeRobotUR5DataConfig(DataConfigFactory):
     @override
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
+        _ur5e_schema.assert_dataset_schema_version(self.repo_id)
         repack_transform = _transforms.Group(
-            inputs=[
-                _transforms.RepackTransform(
-                    {
-                        "base_rgb": "base_rgb",
-                        "wrist_rgb": "wrist_rgb",
-                        "joints": "joints",
-                        "gripper": "gripper",
-                        "actions": "actions",
-                        "prompt": "task",
-                    }
-                )
-            ]
+            inputs=[_transforms.RepackTransform(dict(_ur5e_schema.OPENPI_REPACK_MAP))]
         )
         data_transforms = _transforms.Group(
             inputs=[ur5e_policy.UR5Inputs(model_type=model_config.model_type)],
             outputs=[ur5e_policy.UR5Outputs()],
         )
-        delta_action_mask = _transforms.make_bool_mask(6, -1)
+        delta_action_mask = _ur5e_schema.DELTA_ACTION_MASK
         data_transforms = data_transforms.push(
             inputs=[_transforms.DeltaActions(delta_action_mask)],
             outputs=[_transforms.AbsoluteActions(delta_action_mask)],
@@ -616,38 +610,8 @@ _CONFIGS = [
         ),
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
         num_train_steps=20_000,
-        batch_size=1,
-        num_workers=0,
-        freeze_filter=pi0_config.Pi0Config(
-            pi05=True,
-            action_dim=32,
-            action_horizon=16,
-            paligemma_variant="gemma_2b_lora",
-            action_expert_variant="gemma_300m_lora",
-        ).get_freeze_filter(),
-        ema_decay=None,
-    ),
-    TrainConfig(
-        name="pi05_ur5e_avea_lora_ur5e_stats",
-        model=pi0_config.Pi0Config(
-            pi05=True,
-            action_dim=32,
-            action_horizon=16,
-            paligemma_variant="gemma_2b_lora",
-            action_expert_variant="gemma_300m_lora",
-        ),
-        data=LeRobotUR5DataConfig(
-            repo_id="relling/ur5e-avea-teleop-v0",
-            assets=AssetsConfig(
-                assets_dir="gs://openpi-assets/checkpoints/pi05_base/assets",
-                asset_id="ur5e",
-            ),
-            base_config=DataConfig(prompt_from_task=True),
-        ),
-        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
-        num_train_steps=20_000,
-        batch_size=1,
-        num_workers=0,
+        batch_size=4,
+        num_workers=4,
         freeze_filter=pi0_config.Pi0Config(
             pi05=True,
             action_dim=32,
