@@ -463,12 +463,8 @@ class LeRobotDROIDDataConfig(DataConfigFactory):
         )
 
 
-
-
-
-
 # BEGIN RELLING UR5E DATA CONFIG
-from training.lerobot_ur5e import openpi_schema as _ur5e_schema
+from openpi.policies import ur5e_schema as _ur5e_schema
 
 
 @dataclasses.dataclass(frozen=True)
@@ -476,9 +472,7 @@ class LeRobotUR5DataConfig(DataConfigFactory):
     @override
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
         _ur5e_schema.assert_dataset_schema_version(self.repo_id)
-        repack_transform = _transforms.Group(
-            inputs=[_transforms.RepackTransform(dict(_ur5e_schema.OPENPI_REPACK_MAP))]
-        )
+        repack_transform = _transforms.Group(inputs=[_transforms.RepackTransform(dict(_ur5e_schema.OPENPI_REPACK_MAP))])
         data_transforms = _transforms.Group(
             inputs=[ur5e_policy.UR5Inputs(model_type=model_config.model_type)],
             outputs=[ur5e_policy.UR5Outputs()],
@@ -495,6 +489,8 @@ class LeRobotUR5DataConfig(DataConfigFactory):
             data_transforms=data_transforms,
             model_transforms=model_transforms,
         )
+
+
 # END RELLING UR5E DATA CONFIG
 
 

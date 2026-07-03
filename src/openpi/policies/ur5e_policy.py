@@ -9,7 +9,7 @@ import numpy as np
 
 from openpi import transforms
 from openpi.models import model as _model
-from training.lerobot_ur5e import openpi_schema as _ur5e_schema
+from openpi.policies import ur5e_schema as _ur5e_schema
 
 
 def _parse_image(image) -> np.ndarray:
@@ -28,18 +28,14 @@ class UR5Inputs(transforms.DataTransformFn):
     def __call__(self, data: dict) -> dict:
         joints = np.asarray(data["joints"])
         velocity_raw = data.get("joints_velocity")
-        velocity = (
-            np.asarray(velocity_raw) if velocity_raw is not None else np.zeros_like(joints)
-        )
+        velocity = np.asarray(velocity_raw) if velocity_raw is not None else np.zeros_like(joints)
         state = _ur5e_schema.assemble_state(joints, velocity, data["gripper"])
 
         base_image = _parse_image(data[_ur5e_schema.CAMERA_FIELDS[0]])
         wrist_image = _parse_image(data[_ur5e_schema.CAMERA_FIELDS[1]])
         overhead_raw = data.get(_ur5e_schema.CAMERA_FIELDS[2])
         overhead_image = _parse_image(overhead_raw) if overhead_raw is not None else None
-        overhead_present = (
-            overhead_image is not None and bool(np.any(np.asarray(overhead_image)))
-        )
+        overhead_present = overhead_image is not None and bool(np.any(np.asarray(overhead_image)))
 
         match self.model_type:
             case _model.ModelType.PI0 | _model.ModelType.PI05:

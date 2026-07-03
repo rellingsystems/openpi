@@ -64,7 +64,7 @@ def create_trained_policy(
         norm_stats = _checkpoints.load_norm_stats(checkpoint_dir / "assets", data_config.asset_id)
 
     if train_config.name.startswith("pi05_ur5e_avea"):
-        from training.lerobot_ur5e import openpi_schema as _ur5e_schema
+        from openpi.policies import ur5e_schema as _ur5e_schema
 
         state_dim = norm_stats["state"].mean.shape[-1]
         actions_dim = norm_stats["actions"].mean.shape[-1]
